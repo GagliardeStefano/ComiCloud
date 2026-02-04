@@ -5,6 +5,5 @@
 azure-functions
 azure-cosmos
 azure-storage-blob
-azure-ai-vision-imageanalysis
 azure-identity
-requests
+openai
