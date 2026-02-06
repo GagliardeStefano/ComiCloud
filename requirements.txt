@@ -6,4 +6,6 @@ azure-functions
 azure-cosmos
 azure-storage-blob
 azure-identity
+azure-servicebus
 openai
+azure-search-documents

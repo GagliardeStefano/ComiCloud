@@ -3,7 +3,7 @@ import json
 import logging
 from openai import AzureOpenAI
 
-def identify_comic_metadata(sas_url):
+def identify_comic_metadata(blob_url):
     """
     Usa GPT-4o per estrarre i metadati 'puliti' dall'immagine
     """
@@ -76,7 +76,7 @@ def identify_comic_metadata(sas_url):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": [
                     {"type": "text", "text": "Identifica i dati di questo fumetto."},
-                    {"type": "image_url", "image_url": {"url": sas_url, "detail": "auto"}}
+                    {"type": "image_url", "image_url": {"url": blob_url, "detail": "auto"}}
                 ]}
             ],
             max_tokens=500,  # metadata aggiuntivi

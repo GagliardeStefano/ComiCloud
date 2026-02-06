@@ -2,8 +2,9 @@ import azure.functions as func
 import logging
 import json
 import uuid
+import os
 from datetime import datetime
-from services.blob_service import generate_sas_url
+from services.blob_service import delete_blob
 from services.vision_service import identify_comic_metadata
 from services.cosmos_service import save_document
 from urllib.parse import urlparse
@@ -29,15 +30,20 @@ def process_comic(msg: func.ServiceBusMessage):
 
         # estrazione URL del blob
         blob_url = event_data['data']['url']
-        logging.info(f"Processando immagine: {blob_url}")
 
-        # 2. Generazione SAS URL (Blob Service)
-        sas_url = generate_sas_url(blob_url)
-        logging.info("SAS URL generato correttamente")
-        
+        target_container = os.environ["BLOB_CONTAINER_NAME"]
+        if f"/{target_container}/" not in blob_url:
+            logging.warning(f"Il file non si trova nel container '{target_container}'. URL: {blob_url}")
+            return
+        valid_extensions = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff")
+        if not blob_url.lower().endswith(valid_extensions):
+            logging.warning(f"Il file non è un'immagine supportata. URL: {blob_url}")
+            return
+        logging.info(f"Processando immagine: {blob_url}")
+  
         # 3. Analisi AI (GPT-4o)
         logging.info("Chiedo a GPT-4o di identificare e catalogare il fumetto...")
-        ai_data = identify_comic_metadata(sas_url)
+        ai_data = identify_comic_metadata(blob_url)
         
         comic_metadata = None
 
@@ -51,7 +57,7 @@ def process_comic(msg: func.ServiceBusMessage):
                 "publish_date": ai_data.get('publication_year'),
                 "store_date": None,
                 "plot": ai_data.get('plot', 'Trama non disponibile.'),
-                "cover_url": sas_url, # foto scattata dall'utente
+                "cover_url": blob_url, # foto scattata dall'utente
                 "comic_vine_url": None,
                 "publisher": ai_data.get('publisher', 'N/D'),
                 "format_type": ai_data.get('format_type', 'Issue'),
@@ -76,12 +82,8 @@ def process_comic(msg: func.ServiceBusMessage):
             }
         else:
             logging.error("GPT-4o non è riuscito ad analizzare l'immagine.")
-            # fallback 
-            comic_metadata = {
-                "title": "NON IDENTIFICATO",
-                "plot": "Impossibile identificare il fumetto. Riprova a scattare una foto più chiara.",
-                "cover_url": sas_url
-            }
+            # NESSUN METADATA: Segnaliamo errore.
+            comic_metadata = None
 
         # 5. Creazione documento JSON
         doc_id = str(uuid.uuid4())
@@ -96,10 +98,16 @@ def process_comic(msg: func.ServiceBusMessage):
             "user_id": user_id, 
             "original_image_url": blob_url, 
             "ai_analysis": ai_data,
-            "status": "processed",
+            "status": "processed" if comic_metadata else "error", 
             "upload_timestamp": datetime.utcnow().isoformat(),
             "metadata": comic_metadata
         }
+        
+        # TTL (60 secondi) per cancellare fumetto non identificato se il frontend fallisce
+        if not comic_metadata:
+             comic_document['ttl'] = 60
+             logging.info(f"Eliminazione blob associato all'errore: {blob_url}")
+             delete_blob(blob_url)
 
         # 6. Salvataggio su Cosmos DB
         save_document(comic_document)
