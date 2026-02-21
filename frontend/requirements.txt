@@ -1,0 +1,6 @@
+Flask==3.0.0
+azure-storage-blob
+azure-cosmos
+azure-search-documents
+filetype
+azure-servicebus

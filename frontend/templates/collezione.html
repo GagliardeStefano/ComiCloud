@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Collezione - ComiCloud{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>La Tua Collezione</h1>
+    <p><span id="comicCount">{{ comics|length }}</span> fumetti catalogati</p>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input"
+            placeholder="🔍 Cerca fumetti (titolo, personaggi, autori...)">
+    </div>
+</div>
+
+<div class="comics-grid">
+    {% if comics %}
+    {% for comic in comics %}
+    <div class="comic-card" id="card-{{ comic.id }}" data-comic-id="{{ comic.id }}">
+        {% if comic.metadata and comic.metadata.cover_url %}
+        <img src="{{ comic.metadata.cover_url }}" alt="Cover" class="comic-cover">
+        {% else %}
+        <div class="comic-cover-placeholder">📖</div>
+        {% endif %}
+        <div class="comic-info">
+            <h3>{{ comic.metadata.title if comic.metadata and comic.metadata.title else 'Titolo Sconosciuto' }}</h3>
+            <p class="comic-issue">#{{ comic.metadata.issue_number if comic.metadata and comic.metadata.issue_number
+                else 'N/D' }}</p>
+            <p class="comic-date">{{ comic.metadata.publish_date if comic.metadata and comic.metadata.publish_date else
+                '' }}</p>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <p>🎨 Nessun fumetto ancora!</p>
+        <a href="/" class="btn-primary">Carica il Primo</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal per dettagli -->
+<div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modalBody"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/collezione.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Home - ComiCloud{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Carica il Tuo Fumetto</h1>
+    <p>Scatta una foto o carica un'immagine della copertina</p>
+</div>
+
+<div class="upload-section">
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="upload-box" id="uploadBox">
+            <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
+            <label for="fileInput" class="upload-label">
+                <div class="upload-icon">📁</div>
+                <p>Clicca per caricare o scattare una foto</p>
+                <span class="file-info">Supportati: JPG, PNG, JPEG, WEBP, BMP, TIFF</span>
+            </label>
+        </div>
+        <div id="preview" class="preview hidden"></div>
+        <button type="submit" class="btn-primary" id="uploadBtn" disabled>Upload</button>
+    </form>
+    <div id="message" class="message hidden"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}

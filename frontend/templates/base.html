@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>{% block title %}ComiCloud{% endblock %}</title>
+
+    <meta name="description" content="ComiCloud - La tua libreria di fumetti sul cloud">
+    <meta name="author" content="Il Tuo Nome/Team">
+
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+               img-src 'self' data: blob: https://stcomicloud.blob.core.windows.net; 
+               script-src 'self'; 
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+               font-src 'self' https://fonts.gstatic.com;">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">ComiCloud</a>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Home</a></li>
+                <li><a href="/collezione" class="nav-link">Collezione</a></li>
+            </ul>
+
+            <div class="dropdown">
+                <span class="nav-user" style="cursor: pointer;">{{ user_email }} ▼</span>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('logout') }}" style="color: var(--danger-color);">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>ComiCloud © 2026 - Powered by Azure</p>
+        <p style="font-size: 0.8em; margin-top: 5px;">
+            <a href="#" style="color: #aaa; text-decoration: none;">Privacy Policy</a> |
+            <a href="#" style="color: #aaa; text-decoration: none;">Termini di Servizio</a>
+        </p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
