@@ -1,5 +1,6 @@
 import os
 from urllib.parse import urlparse
+from azure.storage.blob import BlobServiceClient
 
 
 def delete_blob(blob_url: str):
@@ -19,7 +20,6 @@ def delete_blob(blob_url: str):
         container_name = path_parts[0]
         blob_name = path_parts[1]
         
-        from azure.storage.blob import BlobServiceClient
         blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
         

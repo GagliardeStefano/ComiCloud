@@ -35,7 +35,7 @@ def identify_comic_metadata(blob_url):
     {
         "title": "Titolo Completo (es. L'Uomo Ragno #150 o Il Ritorno del Cavaliere Oscuro)",
         "series_name": "Nome della Serie (es. Amazing Spider-Man)",
-        "issue_number": "Numero albo (o '1' se volume unico)",
+        "issue_number": "Numero albo (es. '150'). Se è un volume senza numero esplicito, inserisci il numero del volume nella saga (es. '1' per il primo, '2' per il secondo, ecc.), se non trovi nulla scrivi 'N/D'.",
         "publication_year": "Anno di pubblicazione (dell'edizione in foto)",
         "publisher": "Editore (es. Panini Comics, Marvel Italia, Bonelli)",
         "format_type": "Issue | TPB | Hardcover | Manga | Bonellide",
@@ -90,5 +90,7 @@ def identify_comic_metadata(blob_url):
         return json.loads(content)
 
     except Exception as e:
-        logging.error(f"Errore GPT-4o: {e}")
+        logging.error(f"Errore GPT-4o: {type(e).__name__}: {e}")
+        if hasattr(e, 'response'):
+             logging.error(f"Dettaglio Errore AI: {e.response.text}")
         return None

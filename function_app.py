@@ -18,11 +18,12 @@ app = func.FunctionApp()
 
 def process_comic(msg: func.ServiceBusMessage):
 
-    logging.info('Trigger elaborazione fumetto avviato')
+    logging.info(f"Trigger elaborazione fumetto avviato per: {msg.get_body().decode('utf-8')}")
 
     try:
         # 1. Parsing del messaggio
         message_body = msg.get_body().decode('utf-8')
+        logging.info(f"DEBUG: Body del messaggio: {message_body}")
         event_data = json.loads(message_body)
 
         if isinstance(event_data, list):
@@ -32,7 +33,7 @@ def process_comic(msg: func.ServiceBusMessage):
         blob_url = event_data['data']['url']
 
         target_container = os.environ["BLOB_CONTAINER_NAME"]
-        if f"/{target_container}/" not in blob_url:
+        if f"/{target_container.lower()}/" not in blob_url.lower():
             logging.warning(f"Il file non si trova nel container '{target_container}'. URL: {blob_url}")
             return
         valid_extensions = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff")
@@ -105,9 +106,9 @@ def process_comic(msg: func.ServiceBusMessage):
         
         # TTL (60 secondi) per cancellare fumetto non identificato se il frontend fallisce
         if not comic_metadata:
-             comic_document['ttl'] = 60
-             logging.info(f"Eliminazione blob associato all'errore: {blob_url}")
-             delete_blob(blob_url)
+            comic_document['ttl'] = 60
+            logging.info(f"Eliminazione blob associato all'errore: {blob_url}")
+            delete_blob(blob_url)
 
         # 6. Salvataggio su Cosmos DB
         save_document(comic_document)
