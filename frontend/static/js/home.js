@@ -1,4 +1,6 @@
 const fileInput = document.getElementById('fileInput');
+const cameraInput = document.getElementById('cameraInput');
+const galleryInput = document.getElementById('galleryInput');
 const uploadBox = document.getElementById('uploadBox');
 const preview = document.getElementById('preview');
 const uploadForm = document.getElementById('uploadForm');
@@ -22,7 +24,9 @@ function handleFileSelect(e) {
     }
 }
 
-fileInput.addEventListener('change', handleFileSelect);
+if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+if (cameraInput) cameraInput.addEventListener('change', handleFileSelect);
+if (galleryInput) galleryInput.addEventListener('change', handleFileSelect);
 
 // Funzione di Polling: chiede al server se è pronto
 let pollingInterval = null; // Globale per poterlo stoppare

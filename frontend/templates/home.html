@@ -11,14 +11,30 @@
 <div class="upload-section">
     <form id="uploadForm" enctype="multipart/form-data">
         <div class="upload-box" id="uploadBox">
-            <!-- Unico input per PC e Mobile -->
-            <input type="file" id="fileInput" accept="image/*" hidden>
+            <!-- Sezione PC: Unico pulsante -->
+            <div class="pc-only">
+                <input type="file" id="fileInput" accept="image/*" hidden>
+                <div class="upload-icon">📁</div>
+                <p>Carica la foto della copertina</p>
+                <div style="display: flex; justify-content: center; margin-top: 15px;">
+                    <label for="fileInput" class="btn-secondary" style="cursor: pointer;">Seleziona Foto</label>
+                </div>
+            </div>
 
-            <div class="upload-icon">📁</div>
-            <p id="uploadText">Carica la foto della copertina</p>
+            <!-- Sezione Mobile/Tablet: Due pulsanti -->
+            <div class="mobile-only">
+                <!-- Input per scattare foto -->
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+                <!-- Input per galleria -->
+                <input type="file" id="galleryInput" accept="image/*" hidden>
 
-            <div style="display: flex; justify-content: center; margin-top: 15px;">
-                <label for="fileInput" class="btn-secondary" style="cursor: pointer;">📸 Seleziona o Scatta Foto</label>
+                <div class="upload-icon">📸</div>
+                <p>Carica la foto della copertina</p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <label for="cameraInput" class="btn-secondary" style="cursor: pointer;">📸 Scatta Foto</label>
+                    <label for="galleryInput" class="btn-secondary" style="cursor: pointer;">📁 Carica dalla
+                        Galleria</label>
+                </div>
             </div>
 
             <span class="file-info" style="display: block; margin-top: 15px;">Supportati: JPG, PNG, JPEG, WEBP</span>

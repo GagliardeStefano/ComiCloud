@@ -141,7 +141,6 @@ body {
     padding: 3rem;
     text-align: center;
     transition: all 0.3s;
-    cursor: pointer;
 }
 
 .upload-box:hover {
@@ -565,6 +564,19 @@ footer {
     margin-top: 4rem;
 }
 
+/* Responsive Utilities */
+@media (min-width: 769px) {
+    .mobile-only {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .pc-only {
+        display: none !important;
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-container {
@@ -594,7 +606,7 @@ footer {
     top: 100%;
     background-color: var(--bg-light);
     min-width: 160px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
