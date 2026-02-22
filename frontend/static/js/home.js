@@ -5,19 +5,24 @@ const uploadForm = document.getElementById('uploadForm');
 const uploadBtn = document.getElementById('uploadBtn');
 const message = document.getElementById('message');
 
-// Gestione anteprima immagine
-fileInput.addEventListener('change', (e) => {
+// Funzione per gestire la selezione dei file
+function handleFileSelect(e) {
     const file = e.target.files[0];
     if (file) {
+        // Seleziona il file per il form
+        window.selectedFile = file;
+
         const reader = new FileReader();
-        reader.onload = (e) => {
-            preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        reader.onload = (event) => {
+            preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
             preview.classList.remove('hidden');
             uploadBtn.disabled = false;
         };
         reader.readAsDataURL(file);
     }
-});
+}
+
+fileInput.addEventListener('change', handleFileSelect);
 
 // Funzione di Polling: chiede al server se è pronto
 let pollingInterval = null; // Globale per poterlo stoppare
@@ -76,7 +81,7 @@ function checkAnalysisStatus(blobName) {
 uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const file = fileInput.files[0];
+    const file = window.selectedFile;
     if (!file) return;
 
     const formData = new FormData();

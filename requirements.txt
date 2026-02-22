@@ -4,3 +4,4 @@ azure-storage-blob
 azure-cosmos
 openai
 filetype
+azure-search-documents

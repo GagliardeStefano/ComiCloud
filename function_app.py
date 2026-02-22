@@ -8,6 +8,9 @@ from services.blob_service import delete_blob
 from services.vision_service import identify_comic_metadata
 from services.cosmos_service import save_document
 from urllib.parse import urlparse
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
+from azure.cosmos import CosmosClient
 
 app = func.FunctionApp()
 
@@ -54,36 +57,34 @@ def process_comic(msg: func.ServiceBusMessage):
             # mapping diretto dai dati AI al formato interno DB
             comic_metadata = {
                 "title": ai_data.get('title', 'Titolo Sconosciuto'),
-                "issue_number": ai_data.get('issue_number', '1'),
-                "publish_date": ai_data.get('publication_year'),
-                "store_date": None,
+                "issue_number": ai_data.get('issue_number'),
+                "publish_date": ai_data.get('publication_year', 'N/D'),
                 "plot": ai_data.get('plot', 'Trama non disponibile.'),
                 "cover_url": blob_url, # foto scattata dall'utente
-                "comic_vine_url": None,
                 "publisher": ai_data.get('publisher', 'N/D'),
                 "format_type": ai_data.get('format_type', 'Issue'),
                 
                 # credits
-                "writers": ai_data.get('writers', []),
-                "artists": ai_data.get('artists', []),
-                "colorists": ai_data.get('colorists', []),
-                "letterers": ai_data.get('letterers', []),
-                "editors": ai_data.get('editors', []),
-                "cover_artists": ai_data.get('cover_artists', []),
+                "writers": ai_data.get('writers', ['N/D']),
+                "artists": ai_data.get('artists', ['N/D']),
+                "colorists": ai_data.get('colorists', ['N/D']),
+                "letterers": ai_data.get('letterers', ['N/D']),
+                "editors": ai_data.get('editors', ['N/D']),
+                "cover_artists": ai_data.get('cover_artists', ['N/D']),
                 
                 # content
-                "characters": ai_data.get('characters', []),
-                "teams": ai_data.get('teams', []),
-                "locations": ai_data.get('locations', []),
-                "genres": ai_data.get('genres', []),
-                "rating": ai_data.get('rating'),
+                "characters": ai_data.get('characters', ['N/D']),
+                "teams": ai_data.get('teams', ['N/D']),
+                "locations": ai_data.get('locations', ['N/D']),
+                "genres": ai_data.get('genres', ['N/D']),
+                "rating": ai_data.get('rating', 'N/D'),
                 
                 "original_us_info": ai_data.get('original_us_info', {}),
                 "ai_is_pure_source": True
             }
         else:
             logging.error("GPT-4o non è riuscito ad analizzare l'immagine.")
-            # NESSUN METADATA: Segnaliamo errore.
+            # NESSUN METADATA: errore.
             comic_metadata = None
 
         # 5. Creazione documento JSON
@@ -100,7 +101,7 @@ def process_comic(msg: func.ServiceBusMessage):
             "original_image_url": blob_url, 
             "ai_analysis": ai_data,
             "status": "processed" if comic_metadata else "error", 
-            "upload_timestamp": datetime.utcnow().isoformat(),
+            "upload_timestamp": datetime.utcnow().isoformat()+"Z",
             "metadata": comic_metadata
         }
         
@@ -114,7 +115,84 @@ def process_comic(msg: func.ServiceBusMessage):
         save_document(comic_document)
         logging.info(f"Documento {doc_id} salvato su Cosmos DB!")
 
+        # 7. Aggiornamento su Ai Search
+        if comic_metadata:
+            try:
+                # Nota: Ricordati di usare SearchClient
+                search_client = SearchClient(
+                    endpoint=os.environ["SEARCH_ENDPOINT"],
+                    index_name=os.environ["SEARCH_INDEX_NAME"],
+                    credential=AzureKeyCredential(os.environ["SEARCH_KEY"])
+                )
+                
+                # Invia l'intero documento sistemato
+                search_client.upload_documents([comic_document])
+                logging.info(f"Fumetto {doc_id} caricato istantaneamente su AI Search!")
+            except Exception as e:
+                logging.error(f"Errore durante l'upload su AI Search: {str(e)}")
     except Exception as e:
         logging.error(f"Errore critico durante l'elaborazione del messaggio: {str(e)}")
         # rilanciare l'eccezione per far riprovare al Service Bus   
+        raise e
+
+
+@app.service_bus_queue_trigger(arg_name="msg", 
+                               queue_name="delete-comic-queue",
+                               connection="SERVICEBUS_CONNECTION")
+def process_delete_comic(msg: func.ServiceBusMessage):
+    
+    logging.info("Trigger eliminazione fumetto avviato.")
+    
+    try:
+        # 1. Parsing del messaggio
+        event_data = json.loads(msg.get_body().decode('utf-8'))
+        comic_id = event_data.get('comic_id')
+        blob_url = event_data.get('blob_url')
+
+        if not comic_id:
+            logging.error("ID Fumetto mancante nel messaggio di eliminazione.")
+            return
+
+        # 2. ELIMINAZIONE BLOB
+        if blob_url:
+            try:
+                delete_blob(blob_url) 
+                logging.info(f"Blob eliminato con successo: {blob_url}")
+            except Exception as e:
+                logging.warning(f"Impossibile eliminare il blob o già eliminato: {str(e)}")
+
+        # 3. ELIMINAZIONE DA COSMOS DB
+        try:
+            cosmos_connection = os.environ["COSMOS_CONNECTION"]
+            client = CosmosClient.from_connection_string(cosmos_connection)
+            database = client.get_database_client(os.environ["COSMOS_DB_NAME"])
+            container = database.get_container_client(os.environ["COSMOS_CONTAINER_NAME"])
+            
+            container.delete_item(item=comic_id, partition_key=comic_id)
+            logging.info(f"Fumetto {comic_id} eliminato da Cosmos DB.")
+        except Exception as e:
+            logging.warning(f"Fumetto non trovato in Cosmos DB o già eliminato: {str(e)}")
+
+        # 4. ELIMINAZIONE DA AI SEARCH
+        search_endpoint = os.environ.get("SEARCH_ENDPOINT")
+        search_key = os.environ.get("SEARCH_KEY")
+        search_index = os.environ.get("SEARCH_INDEX_NAME")
+
+        if search_endpoint and search_key:
+            try:
+                search_client = SearchClient(
+                    endpoint=search_endpoint,
+                    index_name=search_index,
+                    credential=AzureKeyCredential(search_key)
+                )
+                search_client.delete_documents([{"id": comic_id}])
+                logging.info(f"Fumetto {comic_id} eliminato da AI Search.")
+            except Exception as e:
+                logging.warning(f"Errore durante l'eliminazione da AI Search: {str(e)}")
+        else:
+            logging.error("Variabili di ambiente per AI Search mancanti nella Function App.")
+
+    except Exception as e:
+        logging.error(f"Errore critico durante l'eliminazione: {str(e)}")
+        # Solleviamo l'eccezione in modo che il Service Bus riprovi l'esecuzione (Retry Policy)
         raise e

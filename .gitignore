@@ -140,3 +140,6 @@ __azurite_db*__.json
 
 # Azurite Local Config
 AzuriteConfig
+
+# Reset index Ai Search
+reset_indice.py

@@ -37,7 +37,6 @@ app.wsgi_app = ProxyFix(
 STORAGE_CONNECTION = os.environ.get("STORAGE_CONNECTION")
 COSMOS_CONNECTION = os.environ.get("COSMOS_CONNECTION")
 SERVICEBUS_CONNECTION = os.environ.get("SERVICEBUS_CONNECTION")
-SERVICEBUS_NAME = os.environ.get("SERVICEBUS_NAME")
 
 COSMOS_DB_NAME = os.environ["COSMOS_DB_NAME"]
 COSMOS_CONTAINER_NAME = os.environ["COSMOS_CONTAINER_NAME"]
@@ -172,21 +171,6 @@ def get_comic_details(comic_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 404
 
-def delete_comic_from_search(comic_id):
-    if not SEARCH_ENDPOINT or not SEARCH_KEY:
-        print("Search ignorato (Mancano SEARCH_ENDPOINT o SEARCH_KEY)")
-        return
-    try:
-        search_client = SearchClient(
-            endpoint=SEARCH_ENDPOINT,
-            index_name=SEARCH_INDEX_NAME,
-            credential=AzureKeyCredential(SEARCH_KEY)
-        )
-        documents_to_delete = [{"id": comic_id}]
-        result = search_client.delete_documents(documents=documents_to_delete)
-        print(f"Eliminazione da Search riuscita: {result[0].succeeded}")
-    except Exception as e:
-        print(f"Errore durante l'eliminazione da Search: {e}")
 
 @app.route('/api/delete_comic/<comic_id>', methods=['DELETE'])
 def delete_comic(comic_id):
@@ -208,11 +192,20 @@ def delete_comic(comic_id):
             return jsonify({'error': 'Non autorizzato a eliminare questo fumetto'}), 403
 
         # 3. Elimina il documento
-        container.delete_item(item=comic_id, partition_key=comic_id)
+        delete_message = {
+            "comic_id": comic_id,
+            "blob_url": item.get('original_image_url')
+        }
 
-        delete_comic_from_search(comic_id)
+        # 3. Invio a delete-comic-queue
+        sb_client = ServiceBusClient.from_connection_string(SERVICEBUS_CONNECTION)
+        sender = sb_client.get_queue_sender(queue_name="delete-comic-queue")
+        
+        with sender:
+            msg = ServiceBusMessage(json.dumps(delete_message))
+            sender.send_messages(msg)
 
-        return jsonify({'success': True, 'message': 'Fumetto eliminato'})
+        return jsonify({'success': True, 'message': 'Eliminazione in corso...'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

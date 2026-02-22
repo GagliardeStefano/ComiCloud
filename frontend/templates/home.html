@@ -11,12 +11,17 @@
 <div class="upload-section">
     <form id="uploadForm" enctype="multipart/form-data">
         <div class="upload-box" id="uploadBox">
-            <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
-            <label for="fileInput" class="upload-label">
-                <div class="upload-icon">📁</div>
-                <p>Clicca per caricare o scattare una foto</p>
-                <span class="file-info">Supportati: JPG, PNG, JPEG, WEBP, BMP, TIFF</span>
-            </label>
+            <!-- Unico input per PC e Mobile -->
+            <input type="file" id="fileInput" accept="image/*" hidden>
+
+            <div class="upload-icon">📁</div>
+            <p id="uploadText">Carica la foto della copertina</p>
+
+            <div style="display: flex; justify-content: center; margin-top: 15px;">
+                <label for="fileInput" class="btn-secondary" style="cursor: pointer;">📸 Seleziona o Scatta Foto</label>
+            </div>
+
+            <span class="file-info" style="display: block; margin-top: 15px;">Supportati: JPG, PNG, JPEG, WEBP</span>
         </div>
         <div id="preview" class="preview hidden"></div>
         <button type="submit" class="btn-primary" id="uploadBtn" disabled>Upload</button>
