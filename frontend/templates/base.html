@@ -9,7 +9,7 @@
     <title>{% block title %}ComiCloud{% endblock %}</title>
 
     <meta name="description" content="ComiCloud - La tua libreria di fumetti sul cloud">
-    <meta name="author" content="Il Tuo Nome/Team">
+    <meta name="author" content="ComiCloud Team">
 
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
@@ -18,11 +18,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
-               img-src 'self' data: blob: https://stcomicloud.blob.core.windows.net; 
-               script-src 'self'; 
-               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-               font-src 'self' https://fonts.gstatic.com;">
+    <!-- CSP gestita via HTTP header in app.py (add_security_headers) -->
 </head>
 
 <body>

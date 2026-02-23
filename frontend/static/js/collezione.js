@@ -8,8 +8,6 @@ const closeModalBtn = document.querySelector('.close');
 
 // --- Event Listeners ---
 
-// --- In collezione.js ---
-
 let debounceTimer;
 
 if (searchInput) {
@@ -25,32 +23,24 @@ if (searchInput) {
 }
 
 async function fetchSearchResults(term) {
-    const container = document.querySelector('.comics-grid');
-    // Opzionale: Mostra un indicatore di caricamento
-    // container.style.opacity = '0.5';
-
     try {
-        // Chiama la nuova API Python
         const response = await fetch(`/api/search?q=${encodeURIComponent(term)}*`);
         const data = await response.json();
 
         if (data.results) {
             renderGrid(data.results);
-            // Aggiorna il contatore
             if (comicCount) comicCount.textContent = data.results.length;
         }
     } catch (error) {
         console.error("Errore ricerca:", error);
     }
-    // container.style.opacity = '1';
 }
 
 function renderGrid(comics) {
-    const container = document.querySelector('.comics-grid');
-    container.innerHTML = ''; // Pulisce la griglia attuale
+    comicCardsContainer.innerHTML = ''; // Pulisce la griglia attuale
 
     if (!comics || comics.length === 0) {
-        container.innerHTML = `
+        comicCardsContainer.innerHTML = `
             <div class="empty-state">
                 <p>Nessun fumetto trovato per questa ricerca.</p>
             </div>`;
@@ -78,7 +68,7 @@ function renderGrid(comics) {
         </div>`;
     }).join('');
 
-    container.innerHTML = html;
+    comicCardsContainer.innerHTML = html;
 }
 
 // Event Delegation for Comic Cards
