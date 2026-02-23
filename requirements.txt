@@ -1,7 +1,8 @@
-azure-functions
-azure-servicebus
-azure-storage-blob
-azure-cosmos
-openai
-filetype
-azure-search-documents
+azure-functions>=1.21.0
+azure-servicebus>=7.12.0
+azure-storage-blob>=12.23.0
+azure-cosmos>=4.7.0
+azure-search-documents>=11.6.0
+azure-core>=1.30.0
+openai>=1.0.0,<2.0.0
+filetype>=1.2.0

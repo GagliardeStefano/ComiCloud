@@ -124,8 +124,8 @@ dmypy.json
 .pyre/
 
 # Azure Functions artifacts
-bin
-obj
+/bin
+/obj
 appsettings.json
 local.settings.json
 
@@ -136,7 +136,7 @@ __azurite_db*__.json
 .python_packages
 
 # IDE
-.vscode/
+.vscode
 
 # Azurite Local Config
 AzuriteConfig
