@@ -1,8 +1,18 @@
 .git*
 .vscode
+local.settings.json
+.venv
+
+# Artefatti Azurite
 __azurite_db*__.json
 __blobstorage__
 __queuestorage__
-local.settings.json
-test
-.venv
+
+# Cartella frontend
+frontend/
+
+# Script di utilità locali
+reset_indice.py
+
+# Dipendenze installate localmente
+.python_packages
