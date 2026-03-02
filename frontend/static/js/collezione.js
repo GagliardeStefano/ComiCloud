@@ -39,7 +39,12 @@ async function fetchSearchResults(term) {
 function renderGrid(comics) {
     comicCardsContainer.innerHTML = ''; // Pulisce la griglia attuale
 
-    if (!comics || comics.length === 0) {
+    let deletedComics = JSON.parse(sessionStorage.getItem('deletedComics') || '[]');
+
+    // Filtra via i fumetti che sappiamo essere in fase di eliminazione
+    const comicsToShow = comics.filter(c => !deletedComics.includes(c.id));
+
+    if (!comicsToShow || comicsToShow.length === 0) {
         comicCardsContainer.innerHTML = `
             <div class="empty-state">
                 <p>Nessun fumetto trovato per questa ricerca.</p>
@@ -48,7 +53,7 @@ function renderGrid(comics) {
     }
 
     // Ricostruisce l'HTML identico a quello di Jinja2
-    const html = comics.map(comic => {
+    const html = comicsToShow.map(comic => {
         const meta = comic.metadata || {};
         const title = meta.title || 'Titolo Sconosciuto';
         const issue = meta.issue_number || 'N/D';
@@ -117,6 +122,38 @@ async function showDetails(comicId) {
             return items.map(item => `<span class="badge-secondary">${item}</span>`).join(' ');
         };
 
+        const renderCreativeRole = (title, items) => {
+            if (!items || items.length === 0 || (items.length === 1 && items[0] === 'N/D')) return '';
+            return `
+            <div class="role-group">
+                <h4>${title}</h4>
+                <div>${renderList(items)}</div>
+            </div>`;
+        };
+
+        // Rimuove N/D dagli array nel caso siano stati salvati
+        const cleanArray = (arr) => {
+            if (!arr) return [];
+            const filtered = arr.filter(i => i !== 'N/D' && i !== '');
+            return filtered.length > 0 ? filtered : [];
+        };
+
+        const w = cleanArray(comic.metadata?.writers);
+        const a = cleanArray(comic.metadata?.artists);
+        const col = cleanArray(comic.metadata?.colorists);
+        const lett = cleanArray(comic.metadata?.letterers);
+        const ed = cleanArray(comic.metadata?.editors);
+        const cov = cleanArray(comic.metadata?.cover_artists);
+
+        const char = cleanArray(comic.metadata?.characters);
+        const teams = cleanArray(comic.metadata?.teams);
+        const loc = cleanArray(comic.metadata?.locations);
+        const genres = cleanArray(comic.metadata?.genres);
+        const storyArcs = cleanArray(comic.metadata?.story_arcs);
+
+        const hasCreative = w.length || a.length || col.length || lett.length || ed.length || cov.length;
+        const hasUniverse = char.length || teams.length || loc.length;
+
         modalBody.innerHTML = `
         <div class="detail-container-fixed">
             <div class="detail-image-col">
@@ -130,48 +167,34 @@ async function showDetails(comicId) {
                 <h2 class="detail-title">${comic.metadata?.title || 'Titolo Sconosciuto'}</h2>
                 
                 <div class="detail-badges">
-                    <span class="badge-primary">#${comic.metadata?.issue_number || 'N/D'}</span>
-                    ${comic.metadata?.publisher ? `<span class="badge-publisher">${comic.metadata.publisher}</span>` : ''}
+                    <span class="badge-primary">#${comic.metadata?.issue_number && comic.metadata.issue_number !== 'N/D' ? comic.metadata.issue_number : 'N/D'}</span>
+                    ${comic.metadata?.publisher && comic.metadata.publisher !== 'N/D' ? `<span class="badge-publisher">${comic.metadata.publisher}</span>` : ''}
+                    ${comic.metadata?.format_type && comic.metadata.format_type !== 'N/D' ? `<span class="badge-format">${comic.metadata.format_type}</span>` : ''}
+                    ${comic.metadata?.rating && comic.metadata.rating !== 'N/D' ? `<span class="badge-rating">${comic.metadata.rating}</span>` : ''}
                 </div>
 
+                ${genres.length > 0 ? `
+                <div class="detail-genres">
+                    ${genres.map(g => `<span class="badge-genre">${g}</span>`).join('')}
+                </div>
+                ` : ''}
+
                 <div class="detail-section">
-                    <h3>ℹ️ Informazioni</h3>
-                    <p><strong>Pubblicazione:</strong> ${comic.metadata?.publish_date || 'N/D'}</p>
-                    ${comic.metadata?.store_date ? `<p><strong>Uscita in edicola:</strong> ${comic.metadata.store_date}</p>` : ''}
-                    ${comic.metadata?.cover_price ? `<p><strong>Prezzo copertina:</strong> ${comic.metadata.cover_price}</p>` : ''}
+                    <h3>ℹ️ Dettagli Pubblicazione</h3>
+                    <div class="publish-info-grid">
+                        <div><strong>Data:</strong> ${comic.metadata?.publish_date && comic.metadata.publish_date !== 'N/D' ? comic.metadata.publish_date : 'N/D'}</div>
+                        ${comic.metadata?.store_date && comic.metadata.store_date !== 'N/D' ? `<div><strong>In edicola:</strong> ${comic.metadata.store_date}</div>` : ''}
+                        ${comic.metadata?.cover_price && comic.metadata.cover_price !== 'N/D' ? `<div><strong>Prezzo:</strong> ${comic.metadata.cover_price}</div>` : ''}
+                    </div>
+                    ${comic.metadata?.original_us_info && comic.metadata.original_us_info.title !== 'N/D' ? `
+                    <div class="original-us-info">
+                        <strong>Edizione Originale (USA):</strong> ${comic.metadata.original_us_info.title} 
+                        (${comic.metadata.original_us_info.publisher || 'N/D'}, ${comic.metadata.original_us_info.year || 'N/D'})
+                    </div>
+                    ` : ''}
                 </div>
 
-                ${comic.metadata?.writers && comic.metadata.writers.length > 0 ? `
-                <div class="detail-section">
-                    <h3>🖋️ Scrittori</h3>
-                    ${renderList(comic.metadata.writers)}
-                </div>` : ''}
-
-                ${comic.metadata?.artists && comic.metadata.artists.length > 0 ? `
-                <div class="detail-section">
-                    <h3>🖼️ Artisti</h3>
-                    ${renderList(comic.metadata.artists)}
-                </div>` : ''}
-
-                ${comic.metadata?.characters && comic.metadata.characters.length > 0 ? `
-                <div class="detail-section">
-                    <h3>🦸 Personaggi</h3>
-                    ${renderList(comic.metadata.characters)}
-                </div>` : ''}
-
-                ${comic.metadata?.teams && comic.metadata.teams.length > 0 ? `
-                <div class="detail-section">
-                    <h3>👥 Team</h3>
-                    ${renderList(comic.metadata.teams)}
-                </div>` : ''}
-
-                ${comic.metadata?.story_arcs && comic.metadata.story_arcs.length > 0 ? `
-                <div class="detail-section">
-                    <h3>📖 Story Arc</h3>
-                    ${renderList(comic.metadata.story_arcs)}
-                </div>` : ''}
-
-                ${comic.metadata?.plot ?
+                ${comic.metadata?.plot && comic.metadata.plot !== 'N/D' ?
                 `<div class="detail-section">
                         <h3>📝 Trama</h3>
                         <div class="plot-text">${comic.metadata.plot}</div>
@@ -179,7 +202,36 @@ async function showDetails(comicId) {
                 ''
             }
                 
-                 ${comic.metadata?.comic_vine_url ?
+                ${hasCreative ? `
+                <div class="detail-section">
+                    <h3>🎨 Team Creativo</h3>
+                    <div class="creative-grid">
+                        ${renderCreativeRole('Scrittori', w)}
+                        ${renderCreativeRole('Artisti', a)}
+                        ${renderCreativeRole('Coloristi', col)}
+                        ${renderCreativeRole('Letteristi', lett)}
+                        ${renderCreativeRole('Editor', ed)}
+                        ${renderCreativeRole('Copertinisti', cov)}
+                    </div>
+                </div>` : ''}
+
+                ${hasUniverse ? `
+                <div class="detail-section">
+                    <h3>🌍 Universo e Personaggi</h3>
+                    <div class="universe-grid">
+                        ${renderCreativeRole('Personaggi', char)}
+                        ${renderCreativeRole('Team', teams)}
+                        ${renderCreativeRole('Luoghi', loc)}
+                    </div>
+                </div>` : ''}
+
+                ${storyArcs.length > 0 ? `
+                <div class="detail-section">
+                    <h3>📖 Story Arc</h3>
+                    ${renderList(storyArcs)}
+                </div>` : ''}
+                
+                 ${comic.metadata?.comic_vine_url && comic.metadata.comic_vine_url !== 'N/D' ?
                 `<a href="${comic.metadata.comic_vine_url}" target="_blank" class="btn-secondary btn-full">🔗 Vedi su Comic Vine</a>` :
                 ''
             }
@@ -207,6 +259,11 @@ async function deleteComicFromModal(comicId) {
         const data = await res.json();
 
         if (data.success) {
+            // Salva l'ID nei fumetti eliminati di recente
+            let deletedComics = JSON.parse(sessionStorage.getItem('deletedComics') || '[]');
+            deletedComics.push(comicId);
+            sessionStorage.setItem('deletedComics', JSON.stringify(deletedComics));
+
             // Chiudi modale
             closeModal();
 

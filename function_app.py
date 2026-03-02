@@ -145,20 +145,19 @@ def process_delete_comic(msg: func.ServiceBusMessage):
             logging.error("ID Fumetto mancante nel messaggio di eliminazione.")
             return
 
-        # 2. Eliminazione Blob
+        # 2. Eliminazione da Cosmos DB
+        delete_document(comic_id)
+
+        # 3. Eliminazione da AI Search
+        delete_from_search(comic_id)
+
+        # 4. Eliminazione Blob
         if blob_url:
             try:
                 delete_blob(blob_url)
                 logging.info(f"Blob eliminato con successo: {blob_url}")
             except Exception as e:
                 logging.warning(f"Impossibile eliminare il blob o già eliminato: {str(e)}")
-
-        # 3. Eliminazione da Cosmos DB
-        delete_document(comic_id)
-
-        # 4. Eliminazione da AI Search
-        delete_from_search(comic_id)
-
     except Exception as e:
         logging.error(f"Errore critico durante l'eliminazione: {str(e)}")
         raise
