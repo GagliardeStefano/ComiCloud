@@ -2,6 +2,7 @@ import os
 import json
 import logging
 from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 # Costanti configurabili
 _DEPLOYMENT_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
@@ -65,10 +66,11 @@ def identify_comic_metadata(blob_url: str) -> dict | None:
     Ritorna un dict con i dati, o None in caso di errore.
     """
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    key = os.getenv("AZURE_OPENAI_KEY")
-
+    credential = DefaultAzureCredential()
+    token_provider = get_bearer_token_provider(credential,"https://cognitiveservices.azure.com/.default")
+    
     client = AzureOpenAI(
-        api_key=key,
+        azure_ad_token_provider=token_provider,
         api_version=_API_VERSION,
         azure_endpoint=endpoint
     )

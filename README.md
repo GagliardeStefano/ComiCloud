@@ -67,40 +67,44 @@ ComiCloud/
 ---
 
 ## :gear: Configurazione & Variabili d'Ambiente
+
+> **Nota:** L'autenticazione a tutti i servizi Azure avviene tramite **Managed Identity** (`DefaultAzureCredential`). Non sono necessarie chiavi API o connection string.
+
 Sia per il Frontend (App Service) che per le Azure Functions, sono state configurate le seguenti variabili d'ambiente:
 
 **Database & Storage**
 
-`STORAGE_CONNECTION`: connection string della risorsa Azure Storage
-
-`BLOB_CONTAINER_NAME`: nome del container dove caricare le immagini
-
-`COSMOS_CONNECTION`: connection string per Azure Cosmos DB
+`COSMOS_ENDPOINT`: endpoint di Azure Cosmos DB
 
 `COSMOS_DB_NAME`: nome del database in Cosmos
 
 `COSMOS_CONTAINER_NAME`: nome del container in Cosmos
 
+`STORAGE_ENDPOINT`: endpoint di Azure Blob Storage
+
+`BLOB_CONTAINER_NAME`: nome del container dove caricare le immagini
+
 **Service Bus & Code**
 
-`SERVICEBUS_CONNECTION`: connection string di Azure Service Bus
+`SERVICEBUS_CONNECTION__fullyQualifiedNamespace` (backend): fully qualified namespace del Service Bus
+
+`SERVICEBUS_NAMESPACE` (frontend): fully qualified namespace del Service Bus
 
 **Azure OpenAI**
 
-`AZURE_OPENAI_ENDPOINT`: endpoint del servizio Azure OpenAI
+`AZURE_OPENAI_ENDPOINT`: endpoint base del servizio Azure OpenAI
 
-`AZURE_OPENAI_KEY`: chiave API del servizio OpenAI
+`AZURE_OPENAI_DEPLOYMENT`: nome del deployment del modello
 
 **Azure AI Search**
 
 `SEARCH_ENDPOINT`: endpoint del servizio AI Search
-
-`SEARCH_KEY`: chiave di admin per AI Search
 
 `SEARCH_INDEX_NAME`: nome dell'indice creato per interrogare i fumetti nel Cosmos
 
 ## :clipboard: Requisiti
 * Python 3.11+
 * Risorse Azure configurate
+* Managed Identity abilitata con ruoli RBAC appropriati sui servizi Azure
 
 

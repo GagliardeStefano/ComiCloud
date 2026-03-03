@@ -1,27 +1,23 @@
 import os
 import logging
-
+from azure.identity import DefaultAzureCredential
+from azure.search.documents import SearchClient
 
 def _get_search_client():
     """
     Crea e restituisce un'istanza di SearchClient (lazy import per evitare crash al startup).
     """
-    # Import lazy: se il modulo manca, il crash avviene solo quando si usa Search,
-    # non al caricamento del worker (che impedirebbe la registrazione di TUTTE le function).
-    from azure.search.documents import SearchClient
-    from azure.core.credentials import AzureKeyCredential
-
     endpoint = os.environ.get("SEARCH_ENDPOINT")
-    key = os.environ.get("SEARCH_KEY")
     index_name = os.environ.get("SEARCH_INDEX_NAME")
 
-    if not endpoint or not key or not index_name:
-        raise ValueError("Variabili SEARCH_ENDPOINT, SEARCH_KEY o SEARCH_INDEX_NAME mancanti.")
+    if not endpoint or not index_name:
+        raise ValueError("Variabili SEARCH_ENDPOINT o SEARCH_INDEX_NAME mancanti.")
 
+    credential = DefaultAzureCredential()
     return SearchClient(
         endpoint=endpoint,
         index_name=index_name,
-        credential=AzureKeyCredential(key)
+        credential=credential
     )
 
 

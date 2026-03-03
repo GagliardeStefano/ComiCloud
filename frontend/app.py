@@ -10,6 +10,7 @@ from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 from werkzeug.middleware.proxy_fix import ProxyFix
+from azure.identity import DefaultAzureCredential
 import filetype
 
 # Configurazione logging per Flask (visibile in Azure Log Stream)
@@ -28,23 +29,22 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Variabili d'ambiente
-STORAGE_CONNECTION = os.environ.get("STORAGE_CONNECTION")
-COSMOS_CONNECTION = os.environ.get("COSMOS_CONNECTION")
-SERVICEBUS_CONNECTION = os.environ.get("SERVICEBUS_CONNECTION")
 COSMOS_DB_NAME = os.environ.get("COSMOS_DB_NAME", "")
 COSMOS_CONTAINER_NAME = os.environ.get("COSMOS_CONTAINER_NAME", "")
 BLOB_CONTAINER_NAME = os.environ.get("BLOB_CONTAINER_NAME", "")
-SEARCH_ENDPOINT = os.environ.get("SEARCH_ENDPOINT")
 SEARCH_INDEX_NAME = os.environ.get("SEARCH_INDEX_NAME")
-SEARCH_KEY = os.environ.get("SEARCH_KEY")
+COSMOS_ENDPOINT = os.environ.get("COSMOS_ENDPOINT")
+SEARCH_ENDPOINT = os.environ.get("SEARCH_ENDPOINT")
+STORAGE_ENDPOINT = os.environ.get("STORAGE_ENDPOINT")
 
 _REQUIRED = {
-    "STORAGE_CONNECTION": STORAGE_CONNECTION,
-    "COSMOS_CONNECTION": COSMOS_CONNECTION,
-    "SERVICEBUS_CONNECTION": SERVICEBUS_CONNECTION,
+    "COSMOS_ENDPOINT": COSMOS_ENDPOINT,
     "COSMOS_DB_NAME": COSMOS_DB_NAME,
     "COSMOS_CONTAINER_NAME": COSMOS_CONTAINER_NAME,
     "BLOB_CONTAINER_NAME": BLOB_CONTAINER_NAME,
+    "SEARCH_ENDPOINT": SEARCH_ENDPOINT,
+    "SEARCH_INDEX_NAME": SEARCH_INDEX_NAME,
+    "STORAGE_ENDPOINT": STORAGE_ENDPOINT,
 }
 _missing = [k for k, v in _REQUIRED.items() if not v]
 if _missing:
@@ -55,10 +55,11 @@ def get_container():
     """
     Crea e restituisce il container client di Cosmos DB.
     """
-    client = CosmosClient.from_connection_string(os.environ["COSMOS_CONNECTION"])
-    database = client.get_database_client(os.environ["COSMOS_DB_NAME"])
+    credential = DefaultAzureCredential()
+    client = CosmosClient(url=COSMOS_ENDPOINT, credential=credential)
+    database = client.get_database_client(COSMOS_DB_NAME)
     return database.create_container_if_not_exists(
-        id=os.environ["COSMOS_CONTAINER_NAME"],
+        id=COSMOS_CONTAINER_NAME,
         partition_key=PartitionKey(path="/id"),
         default_ttl=-1
     )
@@ -156,7 +157,8 @@ def upload_image():
         user_id = get_user_id()
         blob_name = f"{user_id}/{uuid.uuid4()}.{kind.extension}"
 
-        blob_service_client = BlobServiceClient.from_connection_string(STORAGE_CONNECTION)
+        credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url=STORAGE_ENDPOINT, credential=credential)
         blob_client = blob_service_client.get_blob_client(
             container=BLOB_CONTAINER_NAME,
             blob=blob_name
@@ -213,7 +215,9 @@ def delete_comic(comic_id):
             "comic_id": comic_id,
             "blob_url": item.get('original_image_url')
         }
-        with ServiceBusClient.from_connection_string(SERVICEBUS_CONNECTION) as sb_client:
+        credential = DefaultAzureCredential()
+        sb_namespace = os.environ["SERVICEBUS_NAMESPACE"]
+        with ServiceBusClient(fully_qualified_namespace=sb_namespace, credential=credential) as sb_client:
             sender = sb_client.get_queue_sender(queue_name="delete-comic-queue")
             with sender:
                 sender.send_messages(ServiceBusMessage(json.dumps(delete_message)))
@@ -271,18 +275,19 @@ def search_comics():
     user_id = get_user_id()
     query = request.args.get('q', '*')
 
-    if not SEARCH_ENDPOINT or not SEARCH_KEY:
-        logger.error("Variabili SEARCH_ENDPOINT o SEARCH_KEY mancanti.")
+    if not SEARCH_ENDPOINT:
+        logger.error("Variabile SEARCH_ENDPOINT mancante.")
         return jsonify({'error': 'Configurazione server incompleta'}), 500
 
     if not query.strip():
         query = "*"
 
     try:
+        credential = DefaultAzureCredential()
         search_client = SearchClient(
-            endpoint=SEARCH_ENDPOINT,
-            index_name=SEARCH_INDEX_NAME,
-            credential=AzureKeyCredential(SEARCH_KEY)
+            endpoint=SEARCH_ENDPOINT, 
+            index_name=SEARCH_INDEX_NAME, 
+            credential=credential
         )
 
         results = search_client.search(

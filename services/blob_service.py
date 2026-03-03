@@ -3,13 +3,12 @@ import logging
 from urllib.parse import urlparse
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceNotFoundError
-
+from azure.identity import DefaultAzureCredential
 
 def delete_blob(blob_url: str):
     """
     Elimina un blob dato il suo URL.
     """
-    storage_connection_string = os.environ["STORAGE_CONNECTION"]
 
     parsed_url = urlparse(blob_url)
     path_parts = parsed_url.path.lstrip('/').split('/', 1)
@@ -22,7 +21,8 @@ def delete_blob(blob_url: str):
     blob_name = path_parts[1]
 
     try:
-        blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
+        credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url=os.environ["STORAGE_ENDPOINT"], credential=credential)
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
         blob_client.delete_blob()
         logging.info(f"Blob eliminato: {blob_name}")

@@ -149,8 +149,6 @@ async function showDetails(comicId) {
         const teams = cleanArray(comic.metadata?.teams);
         const loc = cleanArray(comic.metadata?.locations);
         const genres = cleanArray(comic.metadata?.genres);
-        const storyArcs = cleanArray(comic.metadata?.story_arcs);
-
         const hasCreative = w.length || a.length || col.length || lett.length || ed.length || cov.length;
         const hasUniverse = char.length || teams.length || loc.length;
 
@@ -183,8 +181,6 @@ async function showDetails(comicId) {
                     <h3>ℹ️ Dettagli Pubblicazione</h3>
                     <div class="publish-info-grid">
                         <div><strong>Data:</strong> ${comic.metadata?.publish_date && comic.metadata.publish_date !== 'N/D' ? comic.metadata.publish_date : 'N/D'}</div>
-                        ${comic.metadata?.store_date && comic.metadata.store_date !== 'N/D' ? `<div><strong>In edicola:</strong> ${comic.metadata.store_date}</div>` : ''}
-                        ${comic.metadata?.cover_price && comic.metadata.cover_price !== 'N/D' ? `<div><strong>Prezzo:</strong> ${comic.metadata.cover_price}</div>` : ''}
                     </div>
                     ${comic.metadata?.original_us_info && comic.metadata.original_us_info.title !== 'N/D' ? `
                     <div class="original-us-info">
@@ -225,16 +221,6 @@ async function showDetails(comicId) {
                     </div>
                 </div>` : ''}
 
-                ${storyArcs.length > 0 ? `
-                <div class="detail-section">
-                    <h3>📖 Story Arc</h3>
-                    ${renderList(storyArcs)}
-                </div>` : ''}
-                
-                 ${comic.metadata?.comic_vine_url && comic.metadata.comic_vine_url !== 'N/D' ?
-                `<a href="${comic.metadata.comic_vine_url}" target="_blank" class="btn-secondary btn-full">🔗 Vedi su Comic Vine</a>` :
-                ''
-            }
                
                 <button class="btn-danger btn-full btn-delete-comic" style="margin-top: 1rem;" data-comic-id="${comicId}">🗑️ Elimina Fumetto</button>
             </div>

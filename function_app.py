@@ -3,10 +3,12 @@ import logging
 import json
 import uuid
 import os
+import hashlib
 from datetime import datetime
+from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from services.blob_service import delete_blob, extract_user_id
 from services.vision_service import identify_comic_metadata
-from services.cosmos_service import save_document, delete_document
+from services.cosmos_service import save_document, delete_document, get_container
 from services.search_service import upload_to_search, delete_from_search
 
 app = func.FunctionApp()
@@ -55,6 +57,19 @@ def process_comic(msg: func.ServiceBusMessage):
 
         logging.info(f"Processando immagine: {blob_url}")
 
+        # ID univoco per fumetto e user_id
+        doc_id = hashlib.md5(blob_url.encode('utf-8')).hexdigest()
+        user_id = extract_user_id(blob_url)
+        
+        # controllo se il documento esiste già
+        container = get_container()
+        try:
+            container.read_item(item=doc_id, partition_key=doc_id)
+            logging.info("Il fumetto è già stato elaborato in precedenza. Salto OpenAI.")
+            return
+        except CosmosResourceNotFoundError:
+            pass
+
         # 3. Analisi AI (GPT-4o)
         logging.info("Chiedo a GPT-4o di identificare e catalogare il fumetto...")
         ai_data = identify_comic_metadata(blob_url)
@@ -92,10 +107,7 @@ def process_comic(msg: func.ServiceBusMessage):
         else:
             logging.error("GPT-4o non è riuscito ad analizzare l'immagine.")
 
-        # 4. Estrazione user_id e creazione documento
-        doc_id = str(uuid.uuid4())
-        user_id = extract_user_id(blob_url)
-
+        # 4. Creazione documento
         comic_document = {
             "id": doc_id,
             "user_id": user_id,

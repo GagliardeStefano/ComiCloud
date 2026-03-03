@@ -1,6 +1,7 @@
 import os
 import logging
 from azure.cosmos import CosmosClient, PartitionKey
+from azure.identity import DefaultAzureCredential
 
 # Singleton: il container client viene creato una sola volta e riusato per tutta la vita del worker.
 _container_client = None
@@ -15,11 +16,12 @@ def get_container():
     if _container_client is not None:
         return _container_client
 
-    cosmos_connection = os.environ["COSMOS_CONNECTION"]
     database_name = os.environ["COSMOS_DB_NAME"]
     container_name = os.environ["COSMOS_CONTAINER_NAME"]
+    cosmos_endpoint = os.environ["COSMOS_ENDPOINT"]
 
-    client = CosmosClient.from_connection_string(cosmos_connection)
+    credential = DefaultAzureCredential()
+    client = CosmosClient(cosmos_endpoint, credential=credential)
     database = client.get_database_client(database_name)
 
     # Crea il container se non esiste, con TTL abilitato (default: i documenti non scadono)
