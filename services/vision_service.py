@@ -1,13 +1,11 @@
 import os
+import requests
 import json
 import logging
-from openai import AzureOpenAI
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from azure.identity import DefaultAzureCredential
 
 # Costanti configurabili
-_DEPLOYMENT_NAME = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
-_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
-
+_OPENAI_URI = os.environ.get("OPENAI_ENDPOINT")
 _SYSTEM_PROMPT = """
 Sei il più grande esperto mondiale di fumetti, archivista e catalogatore professionista.
 Conosci perfettamente le edizioni USA (Marvel, DC, Image) e le edizioni ITALIANE (Panini Comics, Star Comics, Bonelli, RW Lion).
@@ -65,33 +63,37 @@ def identify_comic_metadata(blob_url: str) -> dict | None:
     Usa GPT-4o per estrarre i metadati del fumetto dall'immagine.
     Ritorna un dict con i dati, o None in caso di errore.
     """
-    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+
     credential = DefaultAzureCredential()
-    token_provider = get_bearer_token_provider(credential,"https://cognitiveservices.azure.com/.default")
-    
-    client = AzureOpenAI(
-        azure_ad_token_provider=token_provider,
-        api_version=_API_VERSION,
-        azure_endpoint=endpoint
-    )
+    token_provider = credential.get_token("https://cognitiveservices.azure.com/.default")
+    bearer_token = token_provider.token
+
+    headers={
+        "Authorization": f"Bearer {bearer_token}",
+        "Content-Type": "application/json"
+    }
 
     try:
-        response = client.chat.completions.create(
-            model=_DEPLOYMENT_NAME,
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": [
-                    {"type": "text", "text": "Identifica i dati di questo fumetto."},
-                    {"type": "image_url", "image_url": {"url": blob_url, "detail": "auto"}}
-                ]}
-            ],
-            response_format={"type": "json_object"},
-            max_tokens=500,
-            temperature=0.1
+        response = requests.post(
+            _OPENAI_URI,
+            headers=headers,
+            json={
+                "messages": [
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": "Identifica i dati di questo fumetto."},
+                        {"type": "image_url", "image_url": {"url": blob_url, "detail": "auto"}}
+                    ]}
+                ],
+                "response_format": {"type": "json_object"},
+                "max_tokens": 500,
+                "temperature": 0.1
+            }
         )
 
-        content = response.choices[0].message.content
-        return json.loads(content)
+        response.raise_for_status()
+
+        return json.loads(response.json()["choices"][0]["message"]["content"])
 
     except Exception as e:
         logging.error(f"Errore GPT-4o: {type(e).__name__}: {e}")

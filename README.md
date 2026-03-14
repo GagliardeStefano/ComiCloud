@@ -92,9 +92,7 @@ Sia per il Frontend (App Service) che per le Azure Functions, sono state configu
 
 **Azure OpenAI**
 
-`AZURE_OPENAI_ENDPOINT`: endpoint base del servizio Azure OpenAI
-
-`AZURE_OPENAI_DEPLOYMENT`: nome del deployment del modello
+`OPENAI_ENDPOINT`: URI completo per l'endpoint di Azure OpenAI (incluso deployment e api-version)
 
 **Azure AI Search**
 
