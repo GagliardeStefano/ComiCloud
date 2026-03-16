@@ -5,7 +5,6 @@ import logging
 from azure.identity import DefaultAzureCredential
 
 # Costanti configurabili
-_OPENAI_URI = os.environ.get("OPENAI_ENDPOINT")
 _SYSTEM_PROMPT = """
 Sei il più grande esperto mondiale di fumetti, archivista e catalogatore professionista.
 Conosci perfettamente le edizioni USA (Marvel, DC, Image) e le edizioni ITALIANE (Panini Comics, Star Comics, Bonelli, RW Lion).
@@ -63,6 +62,8 @@ def identify_comic_metadata(blob_url: str) -> dict | None:
     Usa GPT-4o per estrarre i metadati del fumetto dall'immagine.
     Ritorna un dict con i dati, o None in caso di errore.
     """
+
+    _OPENAI_URI = os.environ.get("OPENAI_ENDPOINT")
 
     credential = DefaultAzureCredential()
     token_provider = credential.get_token("https://cognitiveservices.azure.com/.default")

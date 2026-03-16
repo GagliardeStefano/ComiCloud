@@ -3,10 +3,16 @@ import logging
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 
+_search_client = None
+
 def _get_search_client():
     """
     Crea e restituisce un'istanza di SearchClient (lazy import per evitare crash al startup).
     """
+    global _search_client
+    if _search_client is not None:
+        return _search_client   
+
     endpoint = os.environ.get("SEARCH_ENDPOINT")
     index_name = os.environ.get("SEARCH_INDEX_NAME")
 
@@ -14,11 +20,12 @@ def _get_search_client():
         raise ValueError("Variabili SEARCH_ENDPOINT o SEARCH_INDEX_NAME mancanti.")
 
     credential = DefaultAzureCredential()
-    return SearchClient(
+    _search_client = SearchClient(
         endpoint=endpoint,
         index_name=index_name,
         credential=credential
     )
+    return _search_client
 
 
 def upload_to_search(document: dict):

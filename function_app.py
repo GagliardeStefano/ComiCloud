@@ -90,7 +90,6 @@ def process_comic(msg: func.ServiceBusMessage):
                 "writers": ai_data.get('writers', ['N/D']),
                 "artists": ai_data.get('artists', ['N/D']),
                 "colorists": ai_data.get('colorists', ['N/D']),
-                "letterers": ai_data.get('letterers', ['N/D']),
                 "editors": ai_data.get('editors', ['N/D']),
                 "cover_artists": ai_data.get('cover_artists', ['N/D']),
                 
