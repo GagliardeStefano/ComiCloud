@@ -8,7 +8,6 @@ from azure.storage.blob import BlobServiceClient
 from azure.cosmos import CosmosClient, PartitionKey
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from azure.search.documents import SearchClient
-from azure.core.credentials import AzureKeyCredential
 from werkzeug.middleware.proxy_fix import ProxyFix
 from azure.identity import DefaultAzureCredential
 import filetype
@@ -50,19 +49,24 @@ _missing = [k for k, v in _REQUIRED.items() if not v]
 if _missing:
     logger.critical(f"Variabili d'ambiente obbligatorie mancanti: {', '.join(_missing)}")
 
-
+_container_client = None
 def get_container():
     """
     Crea e restituisce il container client di Cosmos DB.
     """
+    global _container_client
+    if _container_client is not None:
+        return _container_client
+        
     credential = DefaultAzureCredential()
     client = CosmosClient(url=COSMOS_ENDPOINT, credential=credential)
     database = client.get_database_client(COSMOS_DB_NAME)
-    return database.create_container_if_not_exists(
+    _container_client = database.create_container_if_not_exists(
         id=COSMOS_CONTAINER_NAME,
         partition_key=PartitionKey(path="/id"),
         default_ttl=-1
     )
+    return _container_client
 
 
 @app.after_request

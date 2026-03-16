@@ -141,7 +141,6 @@ async function showDetails(comicId) {
         const w = cleanArray(comic.metadata?.writers);
         const a = cleanArray(comic.metadata?.artists);
         const col = cleanArray(comic.metadata?.colorists);
-        const lett = cleanArray(comic.metadata?.letterers);
         const ed = cleanArray(comic.metadata?.editors);
         const cov = cleanArray(comic.metadata?.cover_artists);
 
@@ -149,7 +148,7 @@ async function showDetails(comicId) {
         const teams = cleanArray(comic.metadata?.teams);
         const loc = cleanArray(comic.metadata?.locations);
         const genres = cleanArray(comic.metadata?.genres);
-        const hasCreative = w.length || a.length || col.length || lett.length || ed.length || cov.length;
+        const hasCreative = w.length || a.length || col.length || ed.length || cov.length;
         const hasUniverse = char.length || teams.length || loc.length;
 
         modalBody.innerHTML = `
@@ -205,7 +204,6 @@ async function showDetails(comicId) {
                         ${renderCreativeRole('Scrittori', w)}
                         ${renderCreativeRole('Artisti', a)}
                         ${renderCreativeRole('Coloristi', col)}
-                        ${renderCreativeRole('Letteristi', lett)}
                         ${renderCreativeRole('Editor', ed)}
                         ${renderCreativeRole('Copertinisti', cov)}
                     </div>
