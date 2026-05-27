@@ -3,7 +3,7 @@ import logging
 from azure.cosmos import CosmosClient, PartitionKey
 from azure.identity import DefaultAzureCredential
 
-# Singleton: il container client viene creato una sola volta e riusato per tutta la vita del worker.
+# Singleton
 _container_client = None
 
 

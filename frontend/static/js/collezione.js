@@ -14,7 +14,7 @@ if (searchInput) {
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value;
 
-        // Usiamo un debounce per non chiamare l'API ad ogni lettera
+        // Debounce per non chiamare l'API ad ogni lettera
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             fetchSearchResults(searchTerm);
@@ -41,7 +41,7 @@ function renderGrid(comics) {
 
     let deletedComics = JSON.parse(sessionStorage.getItem('deletedComics') || '[]');
 
-    // Filtra via i fumetti che sappiamo essere in fase di eliminazione
+    // Filtra via i fumetti che sono in fase di eliminazione
     const comicsToShow = comics.filter(c => !deletedComics.includes(c.id));
 
     if (!comicsToShow || comicsToShow.length === 0) {
@@ -52,7 +52,7 @@ function renderGrid(comics) {
         return;
     }
 
-    // Ricostruisce l'HTML identico a quello di Jinja2
+    // Ricostruisce l'HTML identico a quello di Jinja
     const html = comicsToShow.map(comic => {
         const meta = comic.metadata || {};
         const title = meta.title || 'Titolo Sconosciuto';
@@ -248,10 +248,7 @@ async function deleteComicFromModal(comicId) {
             deletedComics.push(comicId);
             sessionStorage.setItem('deletedComics', JSON.stringify(deletedComics));
 
-            // Chiudi modale
-            closeModal();
-
-            // Rimuovi l'elemento dalla griglia usando l'ID
+            // Rimuove l'elemento dalla griglia usando l'ID
             const card = document.getElementById(`card-${comicId}`);
             if (card) {
                 card.remove();
@@ -264,6 +261,9 @@ async function deleteComicFromModal(comicId) {
                 // Fallback se non trova la card (es. ricarica pagina)
                 window.location.reload();
             }
+
+            // Chiude modale
+            closeModal();
 
         } else {
             alert('Errore: ' + data.error);

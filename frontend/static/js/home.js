@@ -29,7 +29,7 @@ if (cameraInput) cameraInput.addEventListener('change', handleFileSelect);
 if (galleryInput) galleryInput.addEventListener('change', handleFileSelect);
 
 // Funzione di Polling: chiede al server se è pronto
-let pollingInterval = null; // Globale per poterlo stoppare
+let pollingInterval = null;
 
 function checkAnalysisStatus(blobName) {
     let attempts = 0;
@@ -107,7 +107,7 @@ uploadForm.addEventListener('submit', async (e) => {
         if (data.success) {
             // 2. Se l'upload è ok, avvisa l'utente e avvia il polling
             message.textContent = "📤 Immagine caricata. Stiamo analizzando il fumetto...";
-            message.className = 'message info'; // Assicurati di avere uno stile .info o usa .success
+            message.className = 'message info';
             message.classList.remove('hidden');
 
             // Avvia il controllo stato passando il nome del blob
